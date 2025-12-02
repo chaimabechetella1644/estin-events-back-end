@@ -161,7 +161,7 @@ exports.getEventDetails = (req, res) => {
         gallery: "$events.gallery", // if it doesn't exist disable button in front
         // attendees: "$events.attendees",
         capacity: "$events.capacity",
-        club: { name: "$name", email: "$email", phone: "$phone", avatar: "$avatar" }
+        club: { name: "$name", email: "$email", phone: "$phone", avatar: "$avatar", description:"$description" }
     }}
   ]).toArray()
     .then(events => {
