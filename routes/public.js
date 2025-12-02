@@ -16,8 +16,4 @@ router.get('/clubs/:id', publicController.getClubProfile);
 // Single event page
 router.get('/events/:id', publicController.getEventDetails);
 
-// All events
-router.get('/events', publicController.getAllEvents);
-
-
 module.exports = router;
