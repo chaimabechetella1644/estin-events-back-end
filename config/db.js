@@ -7,7 +7,7 @@ let db;
 const connectDB = () => {
   return client.connect()
     .then(() => {
-      db = client.db("ClubsEvents");
+      db = client.db("EventsDB");
       console.log("MongoDB Connected!");
       return db;
     })
