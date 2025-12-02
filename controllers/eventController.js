@@ -22,15 +22,71 @@ exports.getEventById = async (req, res) => {
 };
 
 // Create event
+// exports.createEvent = async (req, res) => {
+//   try {
+//     const newEvent = new Event(req.body);
+//     await newEvent.save();
+//     res.status(201).json(newEvent);
+//   } catch (err) {
+//     res.status(400).json({ message: err.message });
+//   }
+// };
+
+
+
+// Create event with organizers, form fields, images
 exports.createEvent = async (req, res) => {
   try {
-    const newEvent = new Event(req.body);
+    const {
+      club_id,
+      title,
+      coverImage,
+      bannerImage,
+      start_date,
+      end_date,
+      start_time,
+      end_time,
+      category,
+      location,
+      description,
+      capacity,
+      highlights,
+      organizers,
+      form
+    } = req.body;
+
+    const newEvent = new Event({
+      club_id,
+      title,
+      coverImage,
+      bannerImage,
+      start_date,
+      end_date,
+      start_time,
+      end_time,
+      category,
+      location,
+      description,
+      capacity,
+      highlights,
+      organizers,
+      form
+    });
+
     await newEvent.save();
-    res.status(201).json(newEvent);
+
+    res.status(201).json({
+      message: "Event created successfully!",
+      event: newEvent
+    });
+
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
+
+
 
 // Update event
 exports.updateEvent = async (req, res) => {
