@@ -16,4 +16,11 @@ router.get('/clubs/:id', publicController.getClubProfile);
 // Single event page
 router.get('/events/:id', publicController.getEventDetails);
 
+// Registration Form
+router.get('/events/:eventId/registration-form', publicController.getRegistrationForm);
+
+// Register
+router.post('/events/:eventId/register', publicController.registerToEvent);
+
+
 module.exports = router;

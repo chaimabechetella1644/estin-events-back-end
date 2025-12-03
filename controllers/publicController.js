@@ -182,12 +182,12 @@ exports.getRegistrationForm = async (req, res) => {
 
     const result = await db.collection("clubs").aggregate([
       { $unwind: "$events" },
-      { $match: { "events.eventId": eventId } },
+      { $match: { "events.eventId": eventId, "events.status": "upcoming" } },
       { $project: { _id: 0, registrationForm: "$events.registrationForm" } }
     ]).toArray();
 
     if (!result.length) {
-      return res.status(404).json({ msg: "Event not found" });
+      return res.status(404).json({ msg: "Event not upcoming or not found" });
     }
 
     res.json(result[0].registrationForm || []);
