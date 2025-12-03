@@ -173,3 +173,54 @@ exports.getEventDetails = (req, res) => {
     })
     .catch(err => res.status(500).json({ error: err.message }));
 };
+
+// Registration Form
+exports.getRegistrationForm = async (req, res) => {
+  try {
+    const db = getDB();
+    const { eventId } = req.params;
+
+    const result = await db.collection("clubs").aggregate([
+      { $unwind: "$events" },
+      { $match: { "events.eventId": eventId } },
+      { $project: { _id: 0, registrationForm: "$events.registrationForm" } }
+    ]).toArray();
+
+    if (!result.length) {
+      return res.status(404).json({ msg: "Event not found" });
+    }
+
+    res.json(result[0].registrationForm || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Register
+exports.registerToEvent = async (req, res) => {
+  try {
+    const db = getDB();
+    const { eventId } = req.params;
+    const answers = req.body; // form answers
+
+    const result = await db.collection("clubs").updateOne(
+      { "events.eventId": eventId },
+      {
+        $push: {
+          "events.$.participants": {
+            answers,
+            status: "pending",
+          }
+        }
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ msg: "Event not found" });
+    }
+
+    res.json({ msg: "Registration submitted!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
