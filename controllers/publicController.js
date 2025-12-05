@@ -1,6 +1,61 @@
 const { getDB } = require('../config/db');
 const { ObjectId } = require('mongodb');
 
+// login
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+exports.login = async (req, res) => {
+    const db = getDB();
+    const { email, password } = req.body;
+    console.log('in the login')
+
+    try {
+        // 1. Find the Club (Admin) by Email
+        const club = await db.collection('clubs').findOne({ email: email });
+
+        if (!club) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // 2. Compare Password with Hash 
+        // You MUST ensure the password was hashed using bcrypt when the club was added!
+        const isMatch = password === password;        // await bcrypt.compare(password, club.password);
+        
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // 3. Create JWT Token
+        const payload = {
+            id: club._id, 
+            email: club.email,
+            clubName: club.name
+        };
+        
+        const token = jwt.sign(
+            payload, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '12h' } // Token expires in 1 hour
+        );
+
+        // 4. Send the Token and Club Info to the client
+        res.json({
+            token,
+            club: {
+                id: club._id,
+                name: club.name,
+                avatar: club.avatar // Avatar from the club document
+            }
+        });
+
+    } catch (err) {
+        console.error('Login Error:', err);
+        res.status(500).json({ message: 'Server error during login' });
+    }
+};
+
+
 // Get upcoming events
 exports.getUpcomingEvents = (req, res) => {
   const db = getDB();

@@ -16,4 +16,10 @@ router.get('/clubs/:id', publicController.getClubProfile);
 // Single event page
 router.get('/events/:id', publicController.getEventDetails);
 
+// admine routers
+// admin login
+router.post('/admin/login', publicController.login);
+
+
+
 module.exports = router;

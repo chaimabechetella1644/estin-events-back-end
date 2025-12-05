@@ -1,12 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
+const loggerMiddleware = require('./middleware/Logger'); 
+const auth = require('./middleware/auth');
 
 const { connectDB } = require('./config/db');
 const publicRoutes = require('./routes/public');
 
 const app = express();
 app.use(cors());
+app.use(loggerMiddleware);
 app.use(express.json());
 
 connectDB().then(() => {
