@@ -22,4 +22,11 @@ router.post('/admin/login', publicController.login);
 
 
 
+// Registration Form
+router.get('/events/:eventId/registration-form', publicController.getRegistrationForm);
+
+// Register
+router.post('/events/:eventId/register', publicController.registerToEvent);
+
+
 module.exports = router;
