@@ -20,7 +20,7 @@ exports.login = async (req, res) => {
 
         // 2. Compare Password with Hash 
         // You MUST ensure the password was hashed using bcrypt when the club was added!
-        const isMatch = password === password;        // await bcrypt.compare(password, club.password);
+        const isMatch = password === club.password;        // await bcrypt.compare(password, club.password);
         
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -279,3 +279,6 @@ exports.registerToEvent = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+
