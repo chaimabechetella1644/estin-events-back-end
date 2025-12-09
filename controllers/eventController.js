@@ -69,3 +69,93 @@ exports.getEventDetails = (req, res) => {
     })
     .catch(err => res.status(500).json({ error: err.message }));
 };
+
+
+// add event
+exports.addEvent = async (req, res) => {
+  try {
+    const db = getDB();
+    const {
+      title, category, description,
+      startDate, endDate, startTime, endTime,
+      location, bannerImage, coverImage,
+      organizers, customForm
+    } = req.body;
+
+    const clubId = req.params.clubId;
+
+    const event = {
+      eventId: title.toLowerCase().replace(/ /g, "-"),
+      title,
+      category,
+      description,
+      startDate,
+      endDate,
+      startTime,
+      endTime,
+      location,
+      bannerImage,
+      coverImage,
+      organizers,
+      customForm,
+      reviews: [],
+      participants: [],
+      status: new Date(startDate) > new Date() ? "upcoming" : "done"
+    };
+
+    const result = await db.collection("clubs").updateOne(
+      { _id: new ObjectId(clubId) },
+      { $push: { events: event } }
+    );
+
+    if (result.modifiedCount === 0) return res.status(404).json({ msg: "Club not found" });
+
+    res.json({ msg: "Event added!", event, clubId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.getEventDetails = async (req, res) => {
+  try {
+    const db = getDB();
+    const { clubId, eventId } = req.params;
+
+    const club = await db.collection('clubs').findOne(
+      { _id: new ObjectId(clubId), 'events.eventId': eventId },
+      { projection: { 'events.$': 1 } } // only return the matched event
+    );
+
+    if (!club || !club.events || club.events.length === 0)
+      return res.status(404).json({ msg: 'Event not found' });
+
+    const event = club.events[0];
+
+    // Compute some stats dynamically if needed
+    const attendeesCount = (event.participants || []).length;
+    const feedbackCount = (event.reviews || []).length;
+    const averageRating =
+      event.reviews && event.reviews.length
+        ? event.reviews.reduce((sum, r) => sum + r.rating, 0) / event.reviews.length
+        : 0;
+
+    const response = {
+      ...event,
+      stats: {
+        totalRegistrations: attendeesCount,
+        attended: event.attended || attendeesCount, // fallback if you track attended separately
+        feedbackSubmitted: feedbackCount,
+        averageRating: averageRating.toFixed(1),
+      },
+      attendeesList: event.participants || [],
+      organizers: event.organizers || [],
+      gallery: event.gallery || [],
+      reviews: event.reviews || [],
+    };
+
+    res.json(response);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
