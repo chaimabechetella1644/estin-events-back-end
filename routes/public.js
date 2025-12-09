@@ -26,5 +26,7 @@ router.get('/events/:eventId/registration-form', publicController.getRegistratio
 // Register
 router.post('/events/:eventId/register', publicController.registerToEvent);
 
+// add review
+router.post('/events/:eventId/addReview', publicController.addReview);
 
 module.exports = router;

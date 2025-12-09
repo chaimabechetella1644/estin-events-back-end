@@ -63,7 +63,7 @@ exports.getUpcomingEvents = (req, res) => {
     { $unwind: "$events" },
     { $match: { "events.status": "upcoming" } },
     { $project: { 
-        eventId: "$events.eventId", // <--- use eventId instead of _id
+        eventId: "$events.eventId",
         name: "$events.title",
         coverImage: "$events.coverImage",
         startDate: "$events.startDate",
@@ -131,62 +131,80 @@ exports.getClubProfile = (req, res) => {
   const db = getDB();
   const clubId = req.params.id;
 
-  db.collection('clubs').aggregate([
-    { $match: { _id: new ObjectId(clubId) } },
-    { $project: {
-        name: 1,
-        avatar: 1,
-        bannerImage: 1,
-        description: 1,
-        foundationDate: 1,
-        phone: 1,
-        email: 1,
-        upcomingEvents: {
-          $filter: {
-            input: "$events",
-            as: "e",
-            cond: { $eq: ["$$e.status", "upcoming"] }
-          }
-        },
-        pastEvents: {
-          $filter: {
-            input: "$events",
-            as: "e",
-            cond: { $eq: ["$$e.status", "done"] }
+  db.collection("clubs")
+    .aggregate([
+      { $match: { _id: new ObjectId(clubId) } },
+
+      {
+        $project: {
+          name: 1,
+          avatar: 1,
+          bannerImage: 1,
+          description: 1,
+          foundationDate: 1,
+          phone: 1,
+          email: 1,
+
+          upcomingEvents: {
+            $filter: {
+              input: "$events",
+              as: "e",
+              cond: { $eq: ["$$e.status", "upcoming"] }
+            }
+          },
+
+          pastEvents: {
+            $filter: {
+              input: "$events",
+              as: "e",
+              cond: { $eq: ["$$e.status", "done"] }
+            }
           }
         }
-    }},
-    // Only return minimal fields for events
-    { $project: {
-        name: 1,
-        avatar: 1,
-        bannerImage: 1,
-        description: 1,
-        foundationDate: 1,
-        phone: 1,
-        email: 1,
-        upcomingEvents: { 
-          eventId: "$upcomingEvents.eventId",
-          name: "$upcomingEvents.title", 
-          bannerImage: "$upcomingEvents.bannerImage", 
-          startDate: "$upcomingEvents.startDate", 
-          status: "$upcomingEvents.status" 
-        },
-        pastEvents: { 
-          eventId: "$pastEvents.eventId",
-          name: "$pastEvents.title", 
-          bannerImage: "$pastEvents.bannerImage", 
-          startDate: "$pastEvents.startDate", 
-          status: "$pastEvents.status" 
+      },
+
+      // Map events to flat objects
+      {
+        $addFields: {
+          upcomingEvents: {
+            $map: {
+              input: "$upcomingEvents",
+              as: "ev",
+              in: {
+                eventId: "$$ev.eventId",
+                name: "$$ev.title",
+                bannerImage: "$$ev.bannerImage",
+                startDate: "$$ev.startDate",
+                status: "$$ev.status"
+              }
+            }
+          },
+          pastEvents: {
+            $map: {
+              input: "$pastEvents",
+              as: "ev",
+              in: {
+                eventId: "$$ev.eventId",
+                name: "$$ev.title",
+                bannerImage: "$$ev.bannerImage",
+                startDate: "$$ev.startDate",
+                status: "$$ev.status"
+              }
+            }
+          }
         }
-    }}
-  ]).toArray()
-    .then(result => {
-      if(result.length === 0) return res.status(404).json({ msg: "Club not found" });
+      }
+    ])
+    .toArray()
+    .then((result) => {
+      if (result.length === 0)
+        return res.status(404).json({ msg: "Club not found" });
+
       res.json(result[0]);
     })
-    .catch(err => res.status(500).json({ error: err.message }));
+    .catch((err) => res.status(500).json({ error: err.message }));
 };
+
 
 
 // Event details
@@ -216,7 +234,7 @@ exports.getEventDetails = (req, res) => {
         gallery: "$events.gallery", // if it doesn't exist disable button in front
         // attendees: "$events.attendees",
         capacity: "$events.capacity",
-        club: { name: "$name", email: "$email", phone: "$phone", avatar: "$avatar", description:"$description" }
+        club: { name: "$name", email: "$email", phone: "$phone", avatar: "$avatar", description:"$description", id:"$_id" }
     }}
   ]).toArray()
     .then(events => {
@@ -279,6 +297,42 @@ exports.registerToEvent = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Add Review
+exports.addReview = async (req, res) => {
+  try {
+    const db = getDB();
+    const { eventId } = req.params;
+
+    const { name, email, rating, comment } = req.body;
+
+    const review = {
+      name,
+      email,
+      rating,
+      comment,
+      date: new Date().toISOString(),
+    };
+
+    const result = await db.collection("clubs").updateOne(
+      { "events.eventId": eventId },
+      {
+        $push: {
+          "events.$.reviews": review
+        }
+      }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ msg: "Event not found" });
+    }
+
+    return res.json({ msg: "Review added!", review });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 
 
 
