@@ -79,7 +79,7 @@ exports.addEvent = async (req, res) => {
       title, category, description,
       startDate, endDate, startTime, endTime,
       location, bannerImage, coverImage,
-      organizers, customForm
+      organizers, registrationForm
     } = req.body;
 
     const clubId = req.params.clubId;
@@ -97,7 +97,7 @@ exports.addEvent = async (req, res) => {
       bannerImage,
       coverImage,
       organizers,
-      customForm,
+      registrationForm,
       reviews: [],
       participants: [],
       status: new Date(startDate) > new Date() ? "upcoming" : "done"
