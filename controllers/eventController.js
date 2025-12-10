@@ -174,17 +174,23 @@ exports.deleteEvent = async (req, res) => {
     const db = getDB();
     const { clubId, eventId } = req.params;
 
+    // First, find the club to ensure it exists
+    const club = await db.collection("clubs").findOne({ _id: new ObjectId(clubId) });
+    if (!club) return res.status(404).json({ msg: "Club not found" });
+
+    // Then, check if the event exists
+    const eventExists = club.events?.some(e => e.eventId === eventId);
+    if (!eventExists) return res.status(404).json({ msg: "Event not found" });
+
+    // Delete the event
     const result = await db.collection("clubs").updateOne(
       { _id: new ObjectId(clubId) },
       { $pull: { events: { eventId } } }
     );
 
-    if (result.modifiedCount === 0) {
-      return res.status(404).json({ msg: "Event not found" });
-    }
-
     res.json({ msg: "Event deleted successfully", eventId });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };
