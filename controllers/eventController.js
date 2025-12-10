@@ -76,7 +76,7 @@ exports.addEvent = async (req, res) => {
   try {
     const db = getDB();
     const {
-      title, category, description,
+      title, category, description, capacity,
       startDate, endDate, startTime, endTime,
       location, bannerImage, coverImage,
       organizers, registrationForm
@@ -89,6 +89,7 @@ exports.addEvent = async (req, res) => {
       title,
       category,
       description,
+      capacity,
       startDate,
       endDate,
       startTime,
@@ -100,7 +101,13 @@ exports.addEvent = async (req, res) => {
       registrationForm,
       reviews: [],
       participants: [],
-      status: new Date(startDate) > new Date() ? "upcoming" : "done"
+      status: new Date(startDate) > new Date() ? "upcoming" : "done",
+      stats: {
+        totalRegistrations: 0,
+        attended: 0,
+        feedbackSubmitted: 0,
+        averageRating: 0
+      }
     };
 
     const result = await db.collection("clubs").updateOne(
@@ -159,3 +166,45 @@ exports.getEventDetails = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 }
+
+// delete event
+// DELETE EVENT
+exports.deleteEvent = async (req, res) => {
+  try {
+    const db = getDB();
+    const { clubId, eventId } = req.params;
+
+    const result = await db.collection("clubs").updateOne(
+      { _id: new ObjectId(clubId) },
+      { $pull: { events: { eventId } } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ msg: "Event not found" });
+    }
+
+    res.json({ msg: "Event deleted successfully", eventId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+exports.updateEvent = async (req, res) => {
+  try {
+    const db = getDB();
+    const { clubId, eventId } = req.params;
+    const updatedData = req.body;
+    console.log(eventId)
+    const result = await db.collection('clubs').updateOne(
+      { _id: new ObjectId(clubId), "events.eventId": eventId },
+      { $set: Object.fromEntries(Object.entries(updatedData).map(([k,v])=>[`events.$.${k}`,v])) }
+    );
+
+    if(result.matchedCount===0) return res.status(404).json({ msg: "Event not found" });
+
+    res.json({ msg: "Event updated!" });
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+};
